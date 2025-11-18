@@ -5,7 +5,7 @@ AI Timeplanner is an AI-assisted personal planner that combines a conversational
 
 The idea is simple:
 
-> Talk to your planner in plain language (“Lisää huomiselle klo 18–20 koodiblokki”, “Luo tehtävä lähettää CV listalle Work”) and let Azure OpenAI + Azure Functions handle the rest.
+> Talk to your planner in plain language (“Lisää huomiselle klo 12-13 palaveri”, “Luo tehtävä lähettää CV listalle work”) and let Azure OpenAI + Azure Functions handle the rest.
 
 The backend interprets your intent, calls tools like `create_task` and `create_event`, and stores everything in Cosmos DB. The frontend then renders the updated tasks and calendar in real time.
 
