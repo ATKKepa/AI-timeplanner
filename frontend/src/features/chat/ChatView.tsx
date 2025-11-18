@@ -27,7 +27,7 @@ export function ChatView() {
   const [messages, setMessages] = useState<ChatMessage[]>(createInitialMessages);
   const [input, setInput] = useState('');
 
-  const handleSend = () => {
+    const handleSend = async () => {
     const trimmed = input.trim();
     if (!trimmed) return;
 
@@ -38,27 +38,54 @@ export function ChatView() {
       createdAt: new Date().toISOString(),
     };
 
-    // lisätään käyttäjän viesti
+    // lisää käyttäjän viesti heti
     setMessages((prev) => [...prev, userMessage]);
     setInput('');
 
-    // fake-assistenttivastaus (myöhemmin tähän tulee backend + AI)
-    const assistantMessage: ChatMessage = {
-      id: crypto.randomUUID(),
-      role: 'assistant',
-      content: `Tässä kohtaa backend + AI tulkitsisi: "${trimmed}".`,
-      createdAt: new Date().toISOString(),
-    };
+    try {
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ message: trimmed }),
+      });
 
-    setTimeout(() => {
+      if (!res.ok) {
+        throw new Error(`Request failed with status ${res.status}`);
+      }
+
+      const data = await res.json();
+
+      const assistantMessage: ChatMessage = {
+        id: crypto.randomUUID(),
+        role: 'assistant',
+        content:
+          typeof data.reply === 'string'
+            ? data.reply
+            : 'Sain viestisi, mutta en saanut vastausta backendiltä.',
+        createdAt: new Date().toISOString(),
+      };
+
       setMessages((prev) => [...prev, assistantMessage]);
-    }, 400);
+    } catch (e) {
+      console.error('Chat request failed', e);
+      const errorMessage: ChatMessage = {
+        id: crypto.randomUUID(),
+        role: 'assistant',
+        content:
+          'Jotain meni pieleen yhteydessä palvelimeen. Yritä hetken päästä uudestaan.',
+        createdAt: new Date().toISOString(),
+      };
+      setMessages((prev) => [...prev, errorMessage]);
+    }
   };
 
-  const handleEnter = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+
+    const handleEnter = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
-      handleSend();
+      void handleSend();
     }
   };
 
