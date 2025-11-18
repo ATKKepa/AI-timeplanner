@@ -78,7 +78,6 @@ The goal of AI Timeplanner is not just “yet another todo app”, but a **recru
 | Day details + mini calendar highlights | ![AI Timeplanner calendar details](docs/AI-timeplanner_calendarview2.png) |
 | Task management lists | ![AI Timeplanner task view](docs/AI-timeplanner_taskview.png) |
 
-More visuals (and higher-resolution assets) live under `docs/showcase.md`.
 
 ---
 
