@@ -1,15 +1,19 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   Button,
   Card,
   Group,
   ScrollArea,
+  SimpleGrid,
   Stack,
   Text,
   Textarea,
 } from '@mantine/core';
 import type { ChatMessage } from './types';
 import { ChatMessageBubble } from './ChatMessageBubble';
+import { MiniCalendarCard } from './MiniCalendarCard';
+import { MiniTasksCard } from './MiniTasksCard';
+import { emitEventsUpdated, emitTasksUpdated } from '../../utils/dataRefresh';
 
 function createInitialMessages(): ChatMessage[] {
   return [
@@ -26,6 +30,11 @@ function createInitialMessages(): ChatMessage[] {
 export function ChatView() {
   const [messages, setMessages] = useState<ChatMessage[]>(createInitialMessages);
   const [input, setInput] = useState('');
+  const messagesEndRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+  }, [messages]);
 
     const handleSend = async () => {
     const trimmed = input.trim();
@@ -67,6 +76,18 @@ export function ChatView() {
         createdAt: new Date().toISOString(),
       };
 
+      const toolsUsed: string[] = Array.isArray(data.toolUsed) ? data.toolUsed : [];
+      if (
+        toolsUsed.some((tool) =>
+          ['create_task', 'delete_task', 'delete_tasks_in_list', 'update_task'].includes(tool)
+        )
+      ) {
+        emitTasksUpdated();
+      }
+      if (toolsUsed.some((tool) => ['create_event', 'delete_event', 'update_event'].includes(tool))) {
+        emitEventsUpdated();
+      }
+
       setMessages((prev) => [...prev, assistantMessage]);
     } catch (e) {
       console.error('Chat request failed', e);
@@ -90,35 +111,56 @@ export function ChatView() {
   };
 
   return (
-    <Stack h="100%">
+    <Stack h="100%" gap="lg" mah="1000">
       <Text fw={600} fz="lg">
         Chat-assistentti
       </Text>
 
-      <Card withBorder radius="md" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-        <ScrollArea style={{ flex: 1 }}>
-          <Stack p="xs">
-            {messages.map((m) => (
-              <ChatMessageBubble key={m.id} message={m} />
-            ))}
-          </Stack>
-        </ScrollArea>
+      <SimpleGrid
+        cols={{ base: 1, md: 2 }}
+        spacing="lg"
+        style={{ flex: 1, minHeight: 0 }}
+      >
+        <Card
+          withBorder
+          radius="md"
+          p="md"
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            minHeight: '60vh',
+          }}
+        >
+          <ScrollArea style={{ flex: 1, minHeight: 0 }} offsetScrollbars>
+            <Stack p="xs" gap="sm">
+              {messages.map((m) => (
+                <ChatMessageBubble key={m.id} message={m} />
+              ))}
+              <div ref={messagesEndRef} />
+            </Stack>
+          </ScrollArea>
 
-        <Stack gap="xs" mt="sm">
-          <Textarea
-            placeholder='Kirjoita viesti, esim. "Lisää huomiselle tehtävä lähettää CV"'
-            autosize
-            minRows={2}
-            maxRows={4}
-            value={input}
-            onChange={(e) => setInput(e.currentTarget.value)}
-            onKeyDown={handleEnter}
-          />
-          <Group justify="flex-end">
-            <Button onClick={handleSend}>Lähetä</Button>
-          </Group>
+          <Stack gap="xs" mt="sm">
+            <Textarea
+              placeholder='Kirjoita viesti, esim. "Lisää huomiselle tehtävä lähettää CV"'
+              autosize
+              minRows={2}
+              maxRows={4}
+              value={input}
+              onChange={(e) => setInput(e.currentTarget.value)}
+              onKeyDown={handleEnter}
+            />
+            <Group justify="flex-end">
+              <Button onClick={handleSend}>Lähetä</Button>
+            </Group>
+          </Stack>
+        </Card>
+
+        <Stack gap="lg" style={{ minHeight: '60vh' }}>
+          <MiniCalendarCard />
+          <MiniTasksCard />
         </Stack>
-      </Card>
+      </SimpleGrid>
     </Stack>
   );
 }
