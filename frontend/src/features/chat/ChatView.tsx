@@ -47,7 +47,6 @@ export function ChatView() {
       createdAt: new Date().toISOString(),
     };
 
-    // lisää käyttäjän viesti heti
     setMessages((prev) => [...prev, userMessage]);
     setInput('');
 

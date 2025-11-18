@@ -5,7 +5,7 @@ from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 import logging
 from typing import Any
 
-import azure.functions as func # type: ignore
+import azure.functions as func
 from openai import AzureOpenAI
 
 from db import (
@@ -25,11 +25,8 @@ from db_events import (
     delete_events_in_range as db_delete_events_in_range,
 )
 
-
-
 app = func.FunctionApp()
 
-# ----------------- Azure OpenAI setup -----------------
 AZURE_OPENAI_ENDPOINT = os.environ["AZURE_OPENAI_ENDPOINT"]
 AZURE_OPENAI_API_KEY = os.environ["AZURE_OPENAI_API_KEY"]
 AZURE_OPENAI_API_VERSION = os.environ.get("AZURE_OPENAI_API_VERSION", "2024-02-01")
@@ -41,10 +38,7 @@ azure_openai_client = AzureOpenAI(
     azure_endpoint=AZURE_OPENAI_ENDPOINT,
 )
 
-# Yksinkertainen käyttäjä-id devivaiheeseen
 DEMO_USER_ID = "demo-user"
-
-# Toolien määrittely OpenAI:lle
 TOOLS = [
     {
         "type": "function",
@@ -366,11 +360,9 @@ TOOLS = [
 
 
 def get_helsinki_now() -> datetime:
-    """Return current Helsinki time with fallback if tz data missing."""
     try:
         tz = ZoneInfo("Europe/Helsinki")
     except ZoneInfoNotFoundError:
-        # Fallback to fixed UTC+2 offset, best-effort if Windows lacks tzdata
         tz = timezone(timedelta(hours=2))
     return datetime.now(tz)
 
@@ -418,7 +410,6 @@ MOCK_TASKS = [
 def tasks(req: func.HttpRequest) -> func.HttpResponse:
     method = req.method.upper()
 
-    # TODO: myöhemmin oikea userId authista
     user_id = "demo-user"
 
     if method == "GET":
@@ -448,7 +439,7 @@ def tasks(req: func.HttpRequest) -> func.HttpResponse:
 
         title = (data.get("title") or "").strip()
         list_name = data.get("list") or "Inbox"
-        due_date = data.get("dueDate")  # ISO string tai None
+        due_date = data.get("dueDate")
 
         if not title:
             return func.HttpResponse(
@@ -562,7 +553,6 @@ def chat(req: func.HttpRequest) -> func.HttpResponse:
             status_code=400,
         )
 
-    # TODO: oikea userId authista myöhemmin
     user_id = DEMO_USER_ID
 
     helsinki_now = get_helsinki_now()
@@ -601,7 +591,6 @@ def chat(req: func.HttpRequest) -> func.HttpResponse:
     ]
 
     try:
-        # 1. kutsu – malli päättää käytetäänkö työkaluja
         first_completion = azure_openai_client.chat.completions.create(
             model=AZURE_OPENAI_MODEL,
             messages=messages,
@@ -613,7 +602,6 @@ def chat(req: func.HttpRequest) -> func.HttpResponse:
 
         first_msg = first_completion.choices[0].message
 
-        # Ei työkaluja → suora vastaus
         if not first_msg.tool_calls:
             reply = first_msg.content or ""
             return func.HttpResponse(
@@ -629,7 +617,6 @@ def chat(req: func.HttpRequest) -> func.HttpResponse:
                 status_code=200,
             )
 
-        # On tool call(eja) → suoritetaan ne
         tool_calls = first_msg.tool_calls
         tool_results_messages = []
         used_tools: list[str] = []
@@ -667,7 +654,6 @@ def chat(req: func.HttpRequest) -> func.HttpResponse:
                 end_iso = args.get("end")
                 list_name = args.get("list") or "Default"
 
-                # Tässä vaiheessa oletetaan, että malli on jo varmistanut nämä.
                 event = db_create_event(
                     user_id=user_id,
                     title=title,
@@ -1138,7 +1124,6 @@ def chat(req: func.HttpRequest) -> func.HttpResponse:
                 used_tools.append("list_events_in_range")
 
 
-        # Rakennetaan assistant-viesti tool-calleineen seuraavaa kutsua varten
         assistant_msg_for_second_call = {
             "role": "assistant",
             "content": first_msg.content or "",
@@ -1162,7 +1147,6 @@ def chat(req: func.HttpRequest) -> func.HttpResponse:
             *tool_results_messages,
         ]
 
-        # 2. kutsu – malli muotoilee käyttäjälle nätin vastauksen siitä mitä tehtiin
         second_completion = azure_openai_client.chat.completions.create(
             model=AZURE_OPENAI_MODEL,
             messages=second_messages,
@@ -1186,7 +1170,6 @@ def chat(req: func.HttpRequest) -> func.HttpResponse:
         )
 
     except Exception as e:
-        # yksinkertainen error devivaiheessa
         return func.HttpResponse(
             body=json.dumps({"error": "OpenAI call failed", "details": str(e)}),
             mimetype="application/json",
@@ -1197,7 +1180,7 @@ def chat(req: func.HttpRequest) -> func.HttpResponse:
 @app.route(route="events", methods=["GET", "POST"], auth_level=func.AuthLevel.ANONYMOUS)
 def events(req: func.HttpRequest) -> func.HttpResponse:
     method = req.method.upper()
-    user_id = DEMO_USER_ID  # myöhemmin authista
+    user_id = DEMO_USER_ID
 
     if method == "GET":
         start = req.params.get("start")

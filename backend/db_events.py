@@ -20,7 +20,6 @@ def list_events(
     start_iso: Optional[str] = None,
     end_iso: Optional[str] = None,
 ) -> List[Dict[str, Any]]:
-    # Yksinkertainen "kaikki käyttäjän eventit" – voi rajata päivämäärällä myöhemmin
     if start_iso and end_iso:
         query = (
             "SELECT * FROM c "

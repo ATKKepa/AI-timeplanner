@@ -4,7 +4,7 @@ export interface Task {
   id: string;
   title: string;
   list: 'Inbox' | 'Work' | 'Personal';
-  dueDate?: string; // ISO string
+  dueDate?: string;
   status: TaskStatus;
   createdAt: string;
 }

@@ -157,7 +157,6 @@ export function CalendarView() {
     const trimmed = title.trim();
     if (!trimmed || !start || !end) return;
 
-    // varmistetaan että meillä on Date-oliot
     const startDate = start instanceof Date ? start : new Date(start);
     const endDate = end instanceof Date ? end : new Date(end);
 
@@ -498,7 +497,6 @@ export function CalendarView() {
         </Card>
       </SimpleGrid>
 
-      {/* Uusi tapahtuma */}
       <Card withBorder radius="md">
         <Stack gap="xs">
           <TextInput
@@ -553,7 +551,6 @@ export function CalendarView() {
         </Stack>
       </Card>
 
-      {/* Tapahtumalista */}
       <Card withBorder radius="md">
         <Stack gap="sm">
           <Group justify="space-between" align="center">
