@@ -1,0 +1,21 @@
+{
+  "IsEncrypted": false,
+  "Values": {
+    "AzureWebJobsStorage": "UseDevelopmentStorage=true",
+    "FUNCTIONS_WORKER_RUNTIME": "python",
+
+    "AZURE_OPENAI_ENDPOINT": "https://<your-openai-resource>.openai.azure.com/",
+    "AZURE_OPENAI_API_KEY": "<your-azure-openai-api-key>",
+    "AZURE_OPENAI_DEPLOYMENT_NAME": "<your-deployment-name>",
+    "AZURE_OPENAI_API_VERSION": "2024-02-01",
+
+    "COSMOSDB_ENDPOINT": "https://<your-cosmos-account>.documents.azure.com:443/",
+    "COSMOSDB_KEY": "<your-cosmos-db-key>",
+    "COSMOSDB_DATABASE": "ai-timeplanner",
+    "COSMOSDB_TASKS_CONTAINER": "tasks"
+  },
+  "Host": {
+    "CORS": "*",
+    "CORSCredentials": false
+  }
+}

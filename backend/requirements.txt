@@ -4,3 +4,4 @@
 
 azure-functions
 azure-cosmos
+tzdata>=2024.1

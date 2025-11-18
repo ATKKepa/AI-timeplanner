@@ -12,15 +12,18 @@ export function ChatMessageBubble({ message }: ChatMessageBubbleProps) {
     <Group justify={isUser ? 'flex-end' : 'flex-start'}>
       <Paper
         radius="lg"
+        c="black"
         p="sm"
         withBorder
         maw="70%"
+        bg={isUser ? 'var(--mantine-color-blue-filled)' : 'var(--mantine-color-gray-0)'}
         style={{
           alignSelf: isUser ? 'flex-end' : 'flex-start',
+          borderColor: isUser ? 'var(--mantine-color-blue-filled)' : undefined,
         }}
       >
-        <Text fz="xs" c="dimmed">
-          {isUser ? 'Sinä' : 'Assistentti'}
+        <Text fz="xs" c="black">
+          {isUser ? 'Minä' : 'Assistentti'}
         </Text>
         <Text>{message.content}</Text>
       </Paper>

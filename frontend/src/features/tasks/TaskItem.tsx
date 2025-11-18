@@ -1,14 +1,15 @@
 import { Checkbox, Group, Stack, Text, Badge, ActionIcon } from '@mantine/core';
-import { IconTrash } from '@tabler/icons-react';
+import { IconTrash, IconPencil } from '@tabler/icons-react';
 import type { Task } from './types';
 
 interface TaskItemProps {
   task: Task;
   onToggleStatus: (id: string) => void;
   onDelete: (id: string) => void;
+  onEdit?: (task: Task) => void;
 }
 
-export function TaskItem({ task, onToggleStatus, onDelete }: TaskItemProps) {
+export function TaskItem({ task, onToggleStatus, onDelete, onEdit }: TaskItemProps) {
   const isDone = task.status === 'done';
 
   return (
@@ -33,13 +34,24 @@ export function TaskItem({ task, onToggleStatus, onDelete }: TaskItemProps) {
         </Stack>
       </Group>
 
-      <ActionIcon
-        variant="subtle"
-        aria-label="Poista tehtävä"
-        onClick={() => onDelete(task.id)}
-      >
-        <IconTrash size={16} />
-      </ActionIcon>
+      <ActionIcon.Group>
+        {onEdit && (
+          <ActionIcon
+            variant="subtle"
+            aria-label="Muokkaa tehtävää"
+            onClick={() => onEdit(task)}
+          >
+            <IconPencil size={16} />
+          </ActionIcon>
+        )}
+        <ActionIcon
+          variant="subtle"
+          aria-label="Poista tehtävä"
+          onClick={() => onDelete(task.id)}
+        >
+          <IconTrash size={16} />
+        </ActionIcon>
+      </ActionIcon.Group>
     </Group>
   );
 }
