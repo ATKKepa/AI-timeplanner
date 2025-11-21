@@ -230,6 +230,21 @@ func start                   # Run Functions host locally
 func azure functionapp publish <app-name>  # Deploy to Azure (after az login)
 ```
 
+## Testing & CI
+
+Run the same checks locally that CI enforces:
+
+```powershell
+python -m pytest backend/tests/test_db_events.py backend/tests/test_db.py
+npm run lint
+npm run build
+```
+
+GitHub Actions (`.github/workflows/backend-ci.yml`) runs two jobs on every push/PR to `main`:
+
+- `test-backend` installs the Python deps, runs the pytest suite with coverage, and uploads `coverage.xml` as an artifact.
+- `test-frontend` installs Node 20, runs `npm ci`, lints the React app, and ensures `npm run build` succeeds.
+
 ---
 
 ## Deployment notes
