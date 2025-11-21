@@ -15,6 +15,7 @@ import { DateInput } from "@mantine/dates";
 import { IconCalendar } from "@tabler/icons-react";
 import dayjs from "dayjs";
 import type { Task } from "./types";
+import { normalizeTask, parseTaskPayload, parseTasksResponse } from "./taskApi";
 import { TaskItem } from "./TaskItem";
 import { emitTasksUpdated } from "../../utils/dataRefresh";
 
@@ -39,15 +40,6 @@ export function TasksView() {
   const [editStatus, setEditStatus] = useState<"open" | "done">("open");
   const [editSaving, setEditSaving] = useState(false);
 
-  const mapTask = (t: any): Task => ({
-    id: String(t.id),
-    title: String(t.title),
-    list: (t.list as "Inbox" | "Work" | "Personal") ?? "Inbox",
-    status: (t.status as "open" | "done") ?? "open",
-    createdAt: String(t.createdAt ?? new Date().toISOString()),
-    dueDate: t.dueDate ? String(t.dueDate) : undefined,
-  });
-
   useEffect(() => {
     const fetchTasks = async () => {
       try {
@@ -57,11 +49,11 @@ export function TasksView() {
         if (!res.ok) {
           throw new Error(`Request failed with status ${res.status}`);
         }
-        const data = await res.json();
-        const apiTasks = (data.tasks ?? []) as any[];
-        setTasks(apiTasks.map(mapTask));
-      } catch (e: any) {
-        console.error("Failed to fetch tasks", e);
+        const payload: unknown = await res.json();
+        const apiTasks = parseTasksResponse(payload);
+        setTasks(apiTasks.map(normalizeTask));
+      } catch (error: unknown) {
+        console.error("Failed to fetch tasks", error);
         setError("Tehtävien haku epäonnistui");
       } finally {
         setLoading(false);
@@ -94,14 +86,14 @@ export function TasksView() {
         throw new Error(`Request failed with status ${res.status}`);
       }
 
-      const data = await res.json();
-      const newTask = mapTask(data);
+      const responseData: unknown = await res.json();
+      const newTask = normalizeTask(parseTaskPayload(responseData));
       setTasks((prev) => [newTask, ...prev]);
       setTitle("");
       setDueDate(null);
       emitTasksUpdated();
-    } catch (e: any) {
-      console.error("Failed to create task", e);
+    } catch (error: unknown) {
+      console.error("Failed to create task", error);
       setError("Tehtävän luonti epäonnistui");
     } finally {
       setSaving(false);
@@ -122,8 +114,8 @@ export function TasksView() {
       throw new Error(`Request failed with status ${res.status}`);
     }
 
-    const data = await res.json();
-    return mapTask(data);
+    const responseData: unknown = await res.json();
+    return normalizeTask(parseTaskPayload(responseData));
   };
 
   const updateTaskState = (updated: Task) => {
@@ -140,8 +132,8 @@ export function TasksView() {
       const updated = await updateTaskOnServer(id, { status: nextStatus });
       updateTaskState(updated);
       emitTasksUpdated();
-    } catch (e: any) {
-      console.error("Failed to toggle task", e);
+    } catch (error: unknown) {
+      console.error("Failed to toggle task", error);
       setError("Tehtävän päivitys epäonnistui");
     }
   };
@@ -155,8 +147,8 @@ export function TasksView() {
       }
       setTasks((prev) => prev.filter((task) => task.id !== id));
       emitTasksUpdated();
-    } catch (e: any) {
-      console.error("Failed to delete task", e);
+    } catch (error: unknown) {
+      console.error("Failed to delete task", error);
       setError("Tehtävän poisto epäonnistui");
     }
   };
@@ -187,8 +179,8 @@ export function TasksView() {
       updateTaskState(updated);
       setEditingTask(null);
       emitTasksUpdated();
-    } catch (e: any) {
-      console.error("Failed to edit task", e);
+    } catch (error: unknown) {
+      console.error("Failed to edit task", error);
       setError("Tehtävän muokkaus epäonnistui");
     } finally {
       setEditSaving(false);

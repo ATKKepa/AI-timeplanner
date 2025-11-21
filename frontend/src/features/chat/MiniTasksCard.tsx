@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Badge, Card, Group, Loader, ScrollArea, Stack, Text } from '@mantine/core';
 import dayjs from 'dayjs';
 import type { Task } from '../tasks/types';
+import { normalizeTask, parseTasksResponse } from '../tasks/taskApi';
 import { subscribeTasksUpdated } from '../../utils/dataRefresh';
 
 const LIST_LABELS: Record<Task['list'], string> = {
@@ -29,21 +30,13 @@ export function MiniTasksCard({ refreshKey = 0 }: MiniTasksCardProps) {
         throw new Error(`Request failed with status ${res.status}`);
       }
 
-      const data = await res.json();
-      const apiTasks = (data.tasks ?? []) as any[];
-
-      const mapped: Task[] = apiTasks.map((t) => ({
-        id: String(t.id),
-        title: String(t.title),
-        list: (t.list as Task['list']) ?? 'Inbox',
-        status: (t.status as Task['status']) ?? 'open',
-        createdAt: String(t.createdAt ?? new Date().toISOString()),
-        dueDate: t.dueDate ? String(t.dueDate) : undefined,
-      }));
+      const payload: unknown = await res.json();
+      const apiTasks = parseTasksResponse(payload);
+      const mapped: Task[] = apiTasks.map(normalizeTask);
 
       setTasks(mapped);
-    } catch (err) {
-      console.error('Failed to fetch tasks', err);
+    } catch (error: unknown) {
+      console.error('Failed to fetch tasks', error);
       setError('Tehtävien haku epäonnistui');
     } finally {
       setLoading(false);

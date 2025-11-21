@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Alert,
   ActionIcon,
@@ -35,6 +35,53 @@ interface CalendarEvent {
   list?: string;
 }
 
+type ApiCalendarEvent = {
+  id?: unknown;
+  title?: unknown;
+  start?: unknown;
+  end?: unknown;
+  list?: unknown;
+};
+
+const randomEventId = () =>
+  typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+    ? crypto.randomUUID()
+    : `${Date.now()}`;
+
+const ensureIso = (value: unknown) => {
+  if (typeof value === "string") {
+    return value;
+  }
+  if (value instanceof Date) {
+    return value.toISOString();
+  }
+  return new Date().toISOString();
+};
+
+const normalizeEvent = (event: ApiCalendarEvent): CalendarEvent => ({
+  id: typeof event.id === "string" && event.id.length > 0 ? event.id : randomEventId(),
+  title:
+    typeof event.title === "string" && event.title.length > 0
+      ? event.title
+      : "Untitled event",
+  start: ensureIso(event.start),
+  end: ensureIso(event.end),
+  list: typeof event.list === "string" ? event.list : undefined,
+});
+
+const parseEventsResponse = (payload: unknown): ApiCalendarEvent[] => {
+  if (payload && typeof payload === "object" && "events" in payload) {
+    const { events } = payload as { events?: unknown };
+    if (Array.isArray(events)) {
+      return events as ApiCalendarEvent[];
+    }
+  }
+  return [];
+};
+
+const parseSingleEvent = (payload: unknown): ApiCalendarEvent =>
+  payload && typeof payload === "object" ? (payload as ApiCalendarEvent) : {};
+
 export function CalendarView() {
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [loading, setLoading] = useState(true);
@@ -51,15 +98,7 @@ export function CalendarView() {
   const [editEnd, setEditEnd] = useState<Date | null>(null);
   const [editSaving, setEditSaving] = useState(false);
 
-  const mapEvent = (e: any): CalendarEvent => ({
-    id: String(e.id),
-    title: String(e.title),
-    start: String(e.start),
-    end: String(e.end),
-    list: e.list ? String(e.list) : undefined,
-  });
-
-  const fetchEvents = async () => {
+  const fetchEvents = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -69,20 +108,20 @@ export function CalendarView() {
         throw new Error(`Request failed with status ${res.status}`);
       }
 
-      const data = await res.json();
-      const apiEvents = (data.events ?? []) as any[];
-      setEvents(apiEvents.map(mapEvent));
-    } catch (e) {
-      console.error("Failed to fetch events", e);
+      const payload: unknown = await res.json();
+      const apiEvents = parseEventsResponse(payload);
+      setEvents(apiEvents.map(normalizeEvent));
+    } catch (error: unknown) {
+      console.error("Failed to fetch events", error);
       setError("Tapahtumien haku epäonnistui");
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     void fetchEvents();
-  }, []);
+  }, [fetchEvents]);
 
   useEffect(() => {
     if (selectedDate) {
@@ -180,16 +219,16 @@ export function CalendarView() {
         throw new Error(`Request failed with status ${res.status}`);
       }
 
-      const data = await res.json();
-      const newEvent = mapEvent(data);
+      const payload: unknown = await res.json();
+      const newEvent = normalizeEvent(parseSingleEvent(payload));
 
       setEvents((prev) => [...prev, newEvent]);
       setTitle("");
       setStart(null);
       setEnd(null);
       emitEventsUpdated();
-    } catch (e) {
-      console.error("Failed to create event", e);
+    } catch (error: unknown) {
+      console.error("Failed to create event", error);
       setError("Tapahtuman luonti epäonnistui");
     }
   };
@@ -208,8 +247,8 @@ export function CalendarView() {
       throw new Error(`Request failed with status ${res.status}`);
     }
 
-    const data = await res.json();
-    return mapEvent(data);
+    const responseData: unknown = await res.json();
+    return normalizeEvent(parseSingleEvent(responseData));
   };
 
   const updateEventState = (updated: CalendarEvent) => {
@@ -225,8 +264,8 @@ export function CalendarView() {
       }
       setEvents((prev) => prev.filter((event) => event.id !== id));
       emitEventsUpdated();
-    } catch (e) {
-      console.error("Failed to delete event", e);
+    } catch (error: unknown) {
+      console.error("Failed to delete event", error);
       setError("Tapahtuman poisto epäonnistui");
     }
   };
@@ -256,8 +295,8 @@ export function CalendarView() {
       updateEventState(updated);
       setEditingEvent(null);
       emitEventsUpdated();
-    } catch (e) {
-      console.error("Failed to edit event", e);
+    } catch (error: unknown) {
+      console.error("Failed to edit event", error);
       setError("Tapahtuman päivitys epäonnistui");
     } finally {
       setEditSaving(false);

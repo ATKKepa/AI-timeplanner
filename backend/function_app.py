@@ -6,7 +6,7 @@ import logging
 from typing import Any
 
 import azure.functions as func
-from openai import AzureOpenAI
+from openai import AzureOpenAI # type: ignore
 
 from db import (
     list_tasks as db_list_tasks,
