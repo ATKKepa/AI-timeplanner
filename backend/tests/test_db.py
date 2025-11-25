@@ -52,7 +52,7 @@ class _StubCosmosClient:
     def __init__(self, *args, **kwargs) -> None:
         self._container = FakeTasksContainer()
 
-    def get_database_client(self, name):  # noqa: D401 - tiny helper
+    def get_database_client(self, name):  
         return self
 
     def get_container_client(self, name):
@@ -71,14 +71,12 @@ from backend import db
 
 @pytest.fixture(autouse=True)
 def fake_container(monkeypatch):
-    # Every test swaps the real Cosmos container with the in-memory fake.
     container = FakeTasksContainer()
     monkeypatch.setattr(db, "_tasks_container", container)
     return container
 
 
 def test_create_task_persists_defaults(fake_container):
-    # Exercise create_task via the fake container so we can inspect the stored item.
     task = db.create_task(
         user_id="user-1",
         title="Write backend tests",
@@ -95,7 +93,6 @@ def test_create_task_persists_defaults(fake_container):
 
 
 def test_update_task_can_clear_due_date(fake_container):
-    # Seed the fake container with a task that still has a due date.
     seed = db.create_task(
         user_id="user-2",
         title="Prepare demo",
@@ -103,7 +100,6 @@ def test_update_task_can_clear_due_date(fake_container):
         due_date="2025-11-25T12:00:00Z",
     )
 
-    # Request to clear the due date should remove the key entirely.
     updated = db.update_task(user_id="user-2", task_id=seed["id"], updates={"dueDate": None})
 
     assert "dueDate" not in updated
